@@ -1,7 +1,12 @@
 import keras
+import numpy as np
+
 from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.layers import *
+
+from librosa.core import load
+from librosa.feature import melspectrogram
 
 
 def conv(layer, filters, kernel_size, pool_size):
@@ -32,8 +37,12 @@ def createModelCNN():
 
 
 class ModelCNN():
-    def __init__(self):
+    def __init__(self, genres_list=None):
         self.model = None
+        if genres_list is None:
+            self.genres_list = ["blues", "classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock"]
+        else:
+            self.genres_list = genres_list
         
     def build(self):
         self.model = createModelCNN()
@@ -47,8 +56,8 @@ class ModelCNN():
         data_chunks = np.split(S, num_chunk)
         x_pred = np.stack(data_chunks)
         y_pred = np.mean(self.model.predict(x_pred), axis=0)
-        for i in range(len(genres_list)):
-            print("{:10s} {:6.2f}%".format(genres_list[i], y_pred[i]*100))
+        for i in range(len(self.genres_list)):
+            print("{:10s} {:6.2f}%".format(self.genres_list[i], y_pred[i]*100))
         
     def save(self, path='model/'):
         self.model.save(path + 'CNN_model')
