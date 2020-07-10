@@ -1,5 +1,6 @@
 import keras
 import numpy as np
+from glob import glob
 
 from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
@@ -49,6 +50,7 @@ class ModelCNN():
         self.model.compile(loss='categorical_crossentropy', optimizer='adam')
         
     def predict_music(self, music_path):
+        music_name = music_path.split("/")[-1]
         y, sr       = load(music_path, mono=True)
         S           = melspectrogram(y, sr).T
         S           = S[:-1 * (S.shape[0] % 128)]
@@ -56,8 +58,15 @@ class ModelCNN():
         data_chunks = np.split(S, num_chunk)
         x_pred = np.stack(data_chunks)
         y_pred = np.mean(self.model.predict(x_pred), axis=0)
+        print(music_name, "prediction:")
         for i in range(len(self.genres_list)):
             print("{:10s} {:6.2f}%".format(self.genres_list[i], y_pred[i]*100))
+        print("====================================")
+            
+    def predict_path(self, music_path):
+        music_files = glob(music_path + "*.mp3") + glob(music_path + "*.mp4") + glob(music_path + "*.wav")
+        for music_file in music_files:
+            self.predict_music(music_file)
         
     def save(self, path='model/'):
         self.model.save(path + 'CNN_model')
