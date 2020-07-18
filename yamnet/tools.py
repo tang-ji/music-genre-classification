@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import params
 
-def draw_result(waveform, scores, spectrogram):
+def draw_result(waveform, class_names, scores, spectrogram):
 
     # Visualize the results.
     plt.figure(figsize=(10, 8), dpi=100)
