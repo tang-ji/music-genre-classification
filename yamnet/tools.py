@@ -10,6 +10,20 @@ from tools import *
 import yamnet as yamnet_model
 import tensorflow.compat.v1 as tf
 
+def draw_prediction(class_names, scores):
+    mean_scores = np.mean(scores, axis=0)
+    top_N = 10
+    top_class_indices = np.argsort(mean_scores)[::-1][:top_N]
+    plt.figure(figsize=(10, 4), dpi=100)
+    plt.imshow(scores[:, top_class_indices].T, aspect='auto', interpolation='nearest', cmap='gray_r')
+    # Compensate for the PATCH_WINDOW_SECONDS (0.96 s) context window to align with spectrogram.
+    patch_padding = (params.PATCH_WINDOW_SECONDS / 2) / params.PATCH_HOP_SECONDS
+    plt.xlim([-patch_padding, scores.shape[0] + patch_padding])
+    # Label the top_N classes.
+    yticks = range(0, top_N, 1)
+    plt.yticks(yticks, [class_names[top_class_indices[x]] for x in yticks])
+    _ = plt.ylim(-0.5 + np.array([top_N, 0]))
+
 def draw_result(waveform, class_names, scores, spectrogram):
 
     # Visualize the results.
@@ -24,18 +38,7 @@ def draw_result(waveform, class_names, scores, spectrogram):
     plt.imshow(spectrogram.T, aspect='auto', interpolation='nearest', origin='bottom')
 
     # Plot and label the model output scores for the top-scoring classes.
-    mean_scores = np.mean(scores, axis=0)
-    top_N = 10
-    top_class_indices = np.argsort(mean_scores)[::-1][:top_N]
-    plt.subplot(3, 1, 3)
-    plt.imshow(scores[:, top_class_indices].T, aspect='auto', interpolation='nearest', cmap='gray_r')
-    # Compensate for the PATCH_WINDOW_SECONDS (0.96 s) context window to align with spectrogram.
-    patch_padding = (params.PATCH_WINDOW_SECONDS / 2) / params.PATCH_HOP_SECONDS
-    plt.xlim([-patch_padding, scores.shape[0] + patch_padding])
-    # Label the top_N classes.
-    yticks = range(0, top_N, 1)
-    plt.yticks(yticks, [class_names[top_class_indices[x]] for x in yticks])
-    _ = plt.ylim(-0.5 + np.array([top_N, 0]))
+    draw_prediction(class_names, scores)
     
 class modelYamnet:
     def __init__(self, sr=22050):
