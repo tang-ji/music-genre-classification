@@ -36,7 +36,6 @@ def createModelCNN():
 
     return Model(input, output)
 
-
 class ModelCNN():
     def __init__(self, genres_list=None):
         self.model = None
