@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
+import tensorflow as tf
+
+import yamnet.features as features_lib
+import yamnet.params as params
 
 from librosa.core import load
 from librosa.feature import melspectrogram
@@ -36,14 +40,14 @@ class Data():
         for i, genre in enumerate(self.genres_list):
             GENREPATH = self.datapath + genre + "/"
             for j, track in enumerate(os.listdir(GENREPATH)):
+                if j>10:
+                    break
                 TRACKPATH   = GENREPATH + track
                 print("%d.%s\t\t%s (%d)" % (i + 1, genre, TRACKPATH, j + 1))
                 y, sr       = load(TRACKPATH, mono=True)
-                S           = melspectrogram(y, sr).T
-                S           = S[:-1 * (S.shape[0] % 128)]
-                num_chunk   = S.shape[0] / 128
-                data_chunks = np.split(S, num_chunk)
-                data_chunks = [(data, genre) for data in data_chunks]
+                spectrogram = features_lib.waveform_to_log_mel_spectrogram(tf.squeeze([y], axis=0), params)
+                patches = features_lib.spectrogram_to_patches(spectrogram, params)
+                data_chunks = [(data, genre) for data in patches]
                 records.append(data_chunks)
 
         records = [data for record in records for data in record]
@@ -56,8 +60,9 @@ class Data():
         train_records, test_records = list(), list()
         for i, genre in enumerate(self.genres_list):
             genre_df    = df[df['genre'] == genre]
-            train_records.append(genre_df.iloc[:900].values)
-            test_records.append(genre_df.iloc[900:].values)
+            n = round(len(genre_df) * 0.9)
+            train_records.append(genre_df.iloc[:n].values)
+            test_records.append(genre_df.iloc[n:].values)
 
         train_records   = shuffle([record for genre_records in train_records    for record in genre_records])
         test_records    = shuffle([record for genre_records in test_records     for record in genre_records])
